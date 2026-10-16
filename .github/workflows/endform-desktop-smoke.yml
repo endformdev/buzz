@@ -6,8 +6,8 @@ on:
       concurrency:
         description: Max concurrent tests on Endform
         default: "20"
-      grep:
-        description: Test title filter
+      args:
+        description: Extra endform test arguments (file filters, --grep)
         default: ""
 
 permissions:
@@ -24,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      ENDFORM_CONCURRENCY: ${{ inputs.concurrency || '1' }}
-      ENDFORM_GREP: ${{ inputs.grep || 'loads the app shell with mocked channels' }}
+      ENDFORM_CONCURRENCY: ${{ inputs.concurrency || '10' }}
+      ENDFORM_ARGS: ${{ inputs.args || '/smoke\.spec\.ts /badge\.spec\.ts /channel-mute\.spec\.ts /spoiler\.spec\.ts' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
@@ -48,7 +48,7 @@ jobs:
           npx --yes endform@latest test \
             --config playwright.endform.config.ts \
             --project smoke \
-            ${ENDFORM_GREP:+--grep "$ENDFORM_GREP"}
+            $ENDFORM_ARGS
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

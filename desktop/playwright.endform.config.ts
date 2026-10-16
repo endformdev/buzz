@@ -12,4 +12,6 @@ export default defineConfig({
   workers: undefined,
   use: { ...baseConfig.use, trace: "retain-on-failure" },
   projects: baseConfig.projects?.filter(({ name }) => name === "smoke"),
+  // http.server logs every request to stderr; keep the CI log readable.
+  webServer: { ...baseConfig.webServer, stderr: "ignore" },
 });
