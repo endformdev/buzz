@@ -1,0 +1,59 @@
+name: Endform Desktop Smoke E2E
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      concurrency:
+        description: Max concurrent tests on Endform
+        default: "20"
+      grep:
+        description: Test title filter
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write # Endform GitHub App OIDC
+
+concurrency:
+  group: endform-desktop-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Desktop Smoke E2E (Endform)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ENDFORM_CONCURRENCY: ${{ inputs.concurrency || '1' }}
+      ENDFORM_GREP: ${{ inputs.grep || 'loads the app shell with mocked channels' }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - name: Install desktop dependencies
+        run: just desktop-install-ci
+      - name: Desktop E2E build
+        run: pnpm -C desktop build:e2e
+      - name: Desktop smoke e2e on Endform
+        working-directory: desktop
+        run: |
+          npx --yes endform@latest test \
+            --config playwright.endform.config.ts \
+            --project smoke \
+            ${ENDFORM_GREP:+--grep "$ENDFORM_GREP"}
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: endform-desktop-smoke-report
+          path: desktop/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
