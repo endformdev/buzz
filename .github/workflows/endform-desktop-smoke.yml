@@ -24,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      ENDFORM_CONCURRENCY: ${{ inputs.concurrency || '10' }}
-      ENDFORM_ARGS: ${{ inputs.args || '/smoke\.spec\.ts /badge\.spec\.ts /channel-mute\.spec\.ts /spoiler\.spec\.ts' }}
+      ENDFORM_CONCURRENCY: ${{ inputs.concurrency || '50' }}
+      ENDFORM_ARGS: ${{ inputs.args || '' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
